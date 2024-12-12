@@ -327,7 +327,6 @@
 	
 	
 	
-	
 	:wifiscan
 	set /a keynumber=
 	set choice=
@@ -342,7 +341,6 @@
 		timeout /t 5 >nul
 		cls
 		goto :main
-		
 		)
 	
 	
@@ -355,24 +353,8 @@
 		timeout /t 5 >nul
 		cls
 		goto :main
-		
 		)
 	
-	
-	
-	
-		for /f "tokens=1-3 skip=7" %%a in ('netsh wlan show interfaces') do ( 
-		if %%a==State ( 
-				if %%c==connected ( 
-					echo.
-					echo  Disconnecting from current network...
-					netsh wlan disconnect interface="!interface_id!">nul
-					
-					timeout /t 3 /nobreak >nul
-				)
-			)
-		)
-		
 		:skip_disconnection
 		cls
 		
@@ -390,39 +372,48 @@
 		echo  Low Signal Strength WI-FIs are not recommended
 		echo.
 		for /f "tokens=1-4" %%a in ('netsh wlan show networks mode^=bssid interface^="!interface_id!" ') do (
-
 		
 			if %%a==SSID (
 				set /a keynumber=!keynumber! + 1
 				set current_ssid=%%d
-
-				if "!current_ssid!=="" (
-					set "current_ssid=Hidden_Network"
+				
+				:: Check for hidden network (empty SSID or contains "Hidden network")
+				if not "!current_ssid!"=="" if /i not "!current_ssid!"=="Hidden network" (
+					call :character_finder_2 "!current_ssid!"
+					if !text_available!==true (
+						call colorchar.exe /08 " !keynumber! - "
+						call colorchar.exe /0f "!current_ssid!"
+						call colorchar.exe /03 " - !current_signal:~1,5!"
+						echo.
+						
+						echo !keynumber! - !current_ssid! - !current_signal:~1,4!>>wifilist.txt
+					)
 				)
-
-				call :character_finder_2 "!current_ssid!"
-
 			)
 
 			if %%a==Signal (
-			set current_signal==%%c
-			
-			
-				if !text_available!==true (
-					call colorchar.exe /08 " !keynumber! - "
-					call colorchar.exe /0f "!current_ssid!"
-					call colorchar.exe /03 " - !current_signal:~1,5!"
-					echo.
-					
-					echo !keynumber! - !current_ssid! - !current_signal:~1,4!>>wifilist.txt
-					if !keynumber!==24 (
-						goto :skip_scan
-					)
+				set current_signal==%%c
+			)
+		)
+		:skip_scan
+		set /a keynumber=!keynumber!+1
+		set choice_cancel=!keynumber!
+		call colorchar.exe /08 " !keynumber! - "
+		call colorchar.exe /07 "Cancel Selection"
+		
+		echo.
+		echo.
+		call colorchar.exe /0b " Please choice a wifi or cancel(1-!keynumber!)"
+		echo.
+		set choice=
+		call colorchar.exe /0e " wifi"
+		call colorchar.exe /0f "@"
+		call colorchar.exe /08 "select"
+		call colorchar.exe /0f "[]-"
+		set /p choice=
+	
+		:: Rest of the code follows...
 
-				)else (
-				call colorchar.exe /0e " !keynumber! - "
-				call colorchar.exe /0c "Unsupported Char"
-				echo.
 				echo !keynumber! - Unsupported Char>>wifilist.txt
 					if !keynumber!==24 (
 						goto :skip_scan
